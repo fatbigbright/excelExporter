@@ -53,10 +53,17 @@ define(['lib/jquery-1.12.0'], function(_jquery_placeHolder){
     });
 
     var blob = new Blob([header + content + footer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      //type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.ms-excel'
     });
-    $(selector).attr('href', window.URL.createObjectURL(blob));
-    $(selector).attr('download', jsonObj['title'] + '.xls');
+    if(selector.nodeName == 'A'){
+      $(selector).attr('href', window.URL.createObjectURL(blob));
+      $(selector).attr('download', jsonObj['title'] + '.xls');
+    } else if (selector.nodeName == 'INPUT'){
+      $(selector).click(function(){
+        window.location.href = window.URL.createObjectURL(blob);
+      });
+    }
   };
 
   return exporter;
