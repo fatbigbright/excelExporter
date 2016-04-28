@@ -6,6 +6,15 @@ define(['lib/jquery-1.12.0'], function(_jquery_placeHolder){
         !jsonObj.hasOwnProperty('data') ||
         !jsonObj['data'].length > 0) return 'invalid json object format';
 
+    var utilities = {
+      'replaceSpecialChar': function(input){
+        if(!input) return '';
+        return input.replace(/\&/g, '&amp;')
+                    .replace(/\"/g, '&quot;')
+                    .replace(/\</g, '&lt;')
+                    .replace(/\>/g, '&gt;');
+      }
+    };
     var column_spec = [];
     var header = '<?xml version="1.0"?>\n' + 
       '<ss:Workbook xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n' + 
@@ -16,7 +25,7 @@ define(['lib/jquery-1.12.0'], function(_jquery_placeHolder){
     for(var property in jsonObj['data'][0]){
       header += '  <ss:Cell>\n';
       header += '    <ss:Data ss:Type="String">';
-      header += property + '</ss:Data>\n';
+      header += utilities['replaceSpecialChar'](property) + '</ss:Data>\n';
       header += '  </ss:Cell>\n';
 
       column_spec.push(property);
@@ -52,15 +61,30 @@ define(['lib/jquery-1.12.0'], function(_jquery_placeHolder){
       content += '</ss:Row>\n';
     });
 
+    var ua = window.navigator.userAgent.toLowerCase();
+    var msie = ua.indexOf('msie');
+    if(msie > 0 && ua.indexOf('msie 9.0') > 0){
+      var IEwindow = window.open();
+      IEwindow.document.write(header + content + footer);
+      IEwindow.document.close();
+      IEwindow.document.execCommand('SaveAs', true, jsonObj['title'] + '.xls');
+      IEwindow.close();
+      return;
+    }
     var blob = new Blob([header + content + footer], { 
       //type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       type: 'application/vnd.ms-excel'
     });
+
+    if(msie > 0){
+      window.navigator.msSaveBlob(blob, jsonObj['title'] + '.xls');
+      return;
+    }
     if(selector.nodeName == 'A'){
-      $(selector).attr('href', window.URL.createObjectURL(blob));
-      $(selector).attr('download', jsonObj['title'] + '.xls');
+      jQuery(selector).attr('href', window.URL.createObjectURL(blob));
+      jQuery(selector).attr('download', jsonObj['title'] + '.xls');
     } else if (selector.nodeName == 'INPUT'){
-      $(selector).click(function(){
+      jQuery(selector).click(function(){
         window.location.href = window.URL.createObjectURL(blob);
       });
     }
